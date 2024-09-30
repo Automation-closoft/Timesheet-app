@@ -1,0 +1,89 @@
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    height: 100%; /* Set height to 100% */
+    margin: 0; /* Remove default margin */
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    display: flex; /* Use flexbox for body */
+    flex-direction: column; /* Stack elements vertically */
+}
+
+.wrapper {
+    flex: 1; /* Allow wrapper to grow */
+    display: flex;
+    flex-direction: column;
+}
+
+.navbar {
+    background-color: #333;
+    padding: 1em;
+    text-align: center;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 0 15px;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+.content {
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    flex: 1; /* Allow content to grow and push footer down */
+}
+
+h2 {
+    color: #007BFF;
+    text-align: center;
+}
+
+form {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: white;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+}
+
+label {
+    font-weight: bold;
+}
+
+input, button {
+    padding: 10px;
+    font-size: 16px;
+}
+
+button {
+    background-color: #007BFF;
+    color: white;
+    border: none;
+    border-radius: 3px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+footer {
+    background-color: #333; /* Match the navbar background */
+    color: white;
+    text-align: right; /* Align text to the right */
+    padding: 10px 20px; /* Add some padding */
+}
