@@ -13,7 +13,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # Allowed hosts
 ALLOWED_HOSTS = [
-    'timesheet-app-d8y2.onrender.com',
+    'timesheet-app-ewnc.onrender.com',
     'localhost',
     '127.0.0.1',
 ]
