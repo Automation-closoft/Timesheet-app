@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Timesheet{% endblock %}
+
+{% block content %}
+<div class="home-container">
+    <h2>Timesheet Entry</h2>
+    <form method="post" action="{% url 'home' %}">
+        {% csrf_token %}
+        <label for="project">Project Name:</label>
+        <input type="text" id="project" name="project" required>
+
+        <label for="date">Date:</label>
+        <input type="date" id="date" name="date" required>
+
+        <label for="login-time">Log In Time:</label>
+        <input type="time" id="login-time" name="login_time" required>
+
+        <label for="logout-time">Log Out Time:</label>
+        <input type="time" id="logout-time" name="logout_time" required>
+
+        <button type="submit">Submit</button>
+    </form>
+</div>
+
+{% load static %}
+<script src="{% static 'js/script.js' %}"></script>
+{% endblock %}
