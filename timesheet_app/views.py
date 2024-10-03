@@ -117,15 +117,34 @@ def home(request):
     return render(request, 'home.html', {'current_date': current_date})
 
 @login_required
-def download_timesheet(request):
-    profile = UserProfile.objects.get(user=request.user)
-    excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
+def admin_download_timesheets(request):
+    # Ensure only admin can access this view
+    if not request.user.is_staff:
+        raise PermissionDenied("You do not have permission to download timesheets.")
 
-    # Check if the file exists
-    if os.path.exists(excel_filename):
-        return FileResponse(open(excel_filename, 'rb'), as_attachment=True, filename=f"{profile.employee_name}_timesheet.xlsx")
-    else:
-        return render(request, 'error.html', {'message': 'Timesheet file not found.'})
+    # Create a workbook for the admin to download all timesheets
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(['Employee Name', 'Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])  # Add headings
+
+    # Path to save the timesheets
+    EXCEL_PATH = 'timesheets/'
+
+    # Iterate through each user's timesheet file
+    for profile in UserProfile.objects.all():
+        excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
+        if os.path.exists(excel_filename):
+            wb_user = openpyxl.load_workbook(excel_filename)
+            ws_user = wb_user.active
+
+            # Skip the header row and add the data to the admin workbook
+            for row in ws_user.iter_rows(min_row=2, values_only=True):
+                ws.append([profile.employee_name] + list(row))  # Add employee name to each row
+
+    # Create a response to download the workbook
+    response = FileResponse(open('all_timesheets.xlsx', 'wb'), as_attachment=True, filename="all_timesheets.xlsx")
+    wb.save('all_timesheets.xlsx')
+    return response
 
 def logout_view(request):
     logout(request)
