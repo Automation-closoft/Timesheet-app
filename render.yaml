@@ -4,6 +4,8 @@ services:
     name: Timesheet-app
     env: python
     plan: free  # You can change this if you are on a paid plan
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "gunicorn your_project_name.wsgi:application --bind 0.0.0.0:10000"
+    buildCommand: |
+      pip install -r requirements.txt
+      python manage.py collectstatic --noinput  # This collects static files
+    startCommand: "gunicorn timesheet_project.wsgi:application --bind 0.0.0.0:10000"
     port: 10000
