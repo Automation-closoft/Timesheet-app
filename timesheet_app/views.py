@@ -138,7 +138,7 @@ def admin_download_timesheets(request):
         if os.path.exists(excel_filename):
             excel_files.append({
                 'name': f"{profile.employee_name}'s Timesheet",
-                'url': f'/media/timesheets/{profile.employee_name}.xlsx'  # Adjust URL according to your media settings
+                'url': f'/timesheets/{profile.employee_name}.xlsx'  # Adjust URL according to your settings
             })
 
     return render(request, 'download_timesheets.html', {'excel_files': excel_files})
