@@ -1,3 +1,7 @@
+from pathlib import Path
+import os
+import logging
+from datetime import datetime
 from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -8,10 +12,10 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
-from django.http import FileResponse
 import openpyxl
-import os
-from datetime import datetime
+
+# Set up logging
+logger = logging.getLogger(__name__)
 
 # Path to save Excel files
 EXCEL_PATH = 'timesheets/'
@@ -69,33 +73,40 @@ def home(request):
     current_date = timezone.now().date()  # Get the current date
 
     if request.method == 'POST':
-        project = request.POST['project']
-        date = request.POST['date']
-        login_time = request.POST['login_time']
-        logout_time = request.POST['logout_time']
+        project = request.POST.get('project')
+        date = request.POST.get('date')
+        login_time = request.POST.get('login_time')
+        logout_time = request.POST.get('logout_time')
 
-        # Convert login and logout time strings to datetime objects
-        login_time_obj = datetime.strptime(login_time, '%H:%M')
-        logout_time_obj = datetime.strptime(logout_time, '%H:%M')
+        if not all([project, date, login_time, logout_time]):
+            messages.error(request, "Please fill in all fields.")
+            return render(request, 'home.html', {'current_date': current_date})
 
-        # Calculate the number of hours worked (difference between logout and login times)
+        try:
+            login_time_obj = datetime.strptime(login_time, '%H:%M')
+            logout_time_obj = datetime.strptime(logout_time, '%H:%M')
+        except ValueError:
+            messages.error(request, "Please enter time in HH:MM format.")
+            return render(request, 'home.html', {'current_date': current_date})
+
         hours_worked = (logout_time_obj - login_time_obj).seconds / 3600  # Convert seconds to hours
         formatted_hours_worked = format_hours_and_minutes(hours_worked)  # Format to "Xh Ym"
 
-        profile = UserProfile.objects.get(user=request.user)
+        try:
+            profile = UserProfile.objects.get(user=request.user)
+        except UserProfile.DoesNotExist:
+            messages.error(request, "User profile does not exist.")
+            return redirect('signup')
+
         excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
 
-        # Load or create the workbook
-        if os.path.exists(excel_filename):
-            wb = openpyxl.load_workbook(excel_filename)
-        else:
+        if not os.path.exists(excel_filename):
             wb = openpyxl.Workbook()
-
-        ws = wb.active
-
-        # Add a heading row if it's a new file or missing headers
-        if ws.max_row == 1 and ws[1][0].value is None:
+            ws = wb.active
             ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])
+        else:
+            wb = openpyxl.load_workbook(excel_filename)
+            ws = wb.active
 
         # Check if the date already exists in the Excel sheet
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
@@ -117,14 +128,10 @@ def home(request):
 
 @login_required
 def admin_download_timesheets(request):
-    # Ensure only admin can access this view
     if not request.user.is_staff:
         raise PermissionDenied("You do not have permission to download timesheets.")
 
-    # Get all user profiles
     profiles = UserProfile.objects.all()
-
-    # Prepare a list of dictionaries for the template
     excel_files = []
     for profile in profiles:
         excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
@@ -161,12 +168,11 @@ def password_change_view(request):
             logout(request)
             return redirect('password_change_done')
         else:
-            print(form.errors)  # For debugging purposes if the form is invalid
+            logger.error(f"Password change form errors: {form.errors}")  # Log errors for debugging
     else:
         form = PasswordChangeForm(request.user)
 
     return render(request, 'password_change_form.html', {'form': form})
 
-# No login required for password_change_done
 def password_change_done(request):
     return render(request, 'password_change_done.html')
