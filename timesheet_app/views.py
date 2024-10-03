@@ -44,7 +44,7 @@ def signup(request):
             excel_filename = os.path.join(EXCEL_PATH, f'{employee_name}.xlsx')
             wb = openpyxl.Workbook()
             ws = wb.active
-            ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])
+            ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])  # Add headings
             wb.save(excel_filename)
 
             return redirect('login')
@@ -66,7 +66,7 @@ def login_view(request):
 
 @login_required
 def home(request):
-    current_date = timezone.now().date()
+    current_date = timezone.now().date()  # Get the current date
 
     if request.method == 'POST':
         project = request.POST['project']
@@ -74,15 +74,18 @@ def home(request):
         login_time = request.POST['login_time']
         logout_time = request.POST['logout_time']
 
+        # Convert login and logout time strings to datetime objects
         login_time_obj = datetime.strptime(login_time, '%H:%M')
         logout_time_obj = datetime.strptime(logout_time, '%H:%M')
 
-        hours_worked = (logout_time_obj - login_time_obj).seconds / 3600
-        formatted_hours_worked = format_hours_and_minutes(hours_worked)
+        # Calculate the number of hours worked (difference between logout and login times)
+        hours_worked = (logout_time_obj - login_time_obj).seconds / 3600  # Convert seconds to hours
+        formatted_hours_worked = format_hours_and_minutes(hours_worked)  # Format to "Xh Ym"
 
         profile = UserProfile.objects.get(user=request.user)
         excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
 
+        # Load or create the workbook
         if os.path.exists(excel_filename):
             wb = openpyxl.load_workbook(excel_filename)
         else:
@@ -90,50 +93,48 @@ def home(request):
 
         ws = wb.active
 
+        # Add a heading row if it's a new file or missing headers
         if ws.max_row == 1 and ws[1][0].value is None:
             ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])
 
+        # Check if the date already exists in the Excel sheet
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
             if row[0].value == date:
                 row[1].value = project
                 row[2].value = login_time
                 row[3].value = logout_time
-                row[4].value = formatted_hours_worked
+                row[4].value = formatted_hours_worked  # Update hours worked if the entry exists
                 break
         else:
+            # Append a new entry with formatted hours worked
             ws.append([date, project, login_time, logout_time, formatted_hours_worked])
 
         wb.save(excel_filename)
-        return redirect('success')
+
+        return redirect('success')  # Redirect to success page after submission
 
     return render(request, 'home.html', {'current_date': current_date})
 
 @login_required
 def admin_download_timesheets(request):
+    # Ensure only admin can access this view
     if not request.user.is_staff:
         raise PermissionDenied("You do not have permission to download timesheets.")
 
-    wb = openpyxl.Workbook()
-    ws = wb.active
-    ws.append(['Employee Name', 'Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])
+    # Get all user profiles
+    profiles = UserProfile.objects.all()
 
-    for profile in UserProfile.objects.all():
+    # Prepare a list of dictionaries for the template
+    excel_files = []
+    for profile in profiles:
         excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
         if os.path.exists(excel_filename):
-            wb_user = openpyxl.load_workbook(excel_filename)
-            ws_user = wb_user.active
+            excel_files.append({
+                'name': f"{profile.employee_name}'s Timesheet",
+                'url': f'/media/timesheets/{profile.employee_name}.xlsx'  # Adjust URL according to your media settings
+            })
 
-            for row in ws_user.iter_rows(min_row=2, values_only=True):
-                ws.append([profile.employee_name] + list(row))
-
-    all_timesheets_filename = os.path.join(EXCEL_PATH, 'all_timesheets.xlsx')
-    wb.save(all_timesheets_filename)
-
-    response = FileResponse(open(all_timesheets_filename, 'rb'), as_attachment=True, filename='all_timesheets.xlsx')
-
-    os.remove(all_timesheets_filename)
-
-    return response
+    return render(request, 'download_timesheets.html', {'excel_files': excel_files})
 
 def logout_view(request):
     logout(request)
@@ -149,19 +150,23 @@ def password_change_view(request):
         if form.is_valid():
             user = form.save()
 
+            # Clear any existing messages to avoid multiple success messages
             storage = messages.get_messages(request)
             for _ in storage:
-                pass
+                pass  # This clears existing messages
 
             messages.success(request, 'Your password has been updated!')
+
+            # Log out the user after successful password change and redirect to password change done
             logout(request)
             return redirect('password_change_done')
         else:
-            print(form.errors)
+            print(form.errors)  # For debugging purposes if the form is invalid
     else:
         form = PasswordChangeForm(request.user)
 
     return render(request, 'password_change_form.html', {'form': form})
 
+# No login required for password_change_done
 def password_change_done(request):
     return render(request, 'password_change_done.html')
