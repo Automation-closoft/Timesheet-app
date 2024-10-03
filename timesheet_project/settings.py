@@ -8,10 +8,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # Secret key - use an environment variable for production
 SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 
-# Debugging
+# Debugging - Set 'DJANGO_DEBUG' as an environment variable
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-# Allowed hosts
+# Allowed hosts - Add your Render app URL and localhost
 ALLOWED_HOSTS = [
     'timesheet-app-ewnc.onrender.com',
     'localhost',
@@ -26,13 +26,13 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'timesheet_app',
+    'timesheet_app',  # Your custom app
 ]
 
 # Middleware
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
-    'whitenoise.middleware.WhiteNoiseMiddleware',  # Middleware for static file handling
+    'whitenoise.middleware.WhiteNoiseMiddleware',  # Middleware for static file handling in production
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -64,16 +64,11 @@ TEMPLATES = [
 # WSGI application
 WSGI_APPLICATION = 'timesheet_project.wsgi.application'
 
-# Database configuration - use PostgreSQL in production
+# Database configuration - SQLite for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',  # Change to 'django.db.backends.postgresql' in production
         'NAME': BASE_DIR / 'db.sqlite3',
-        # Uncomment and configure for PostgreSQL:
-        # 'USER': os.environ.get('DB_USER'),
-        # 'PASSWORD': os.environ.get('DB_PASSWORD'),
-        # 'HOST': os.environ.get('DB_HOST', 'localhost'),
-        # 'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
 
@@ -99,14 +94,17 @@ TIME_ZONE = 'Asia/Kolkata'
 USE_I18N = True
 USE_TZ = True
 
-# Static files
+# Static files settings
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Use the existing static directory
-STATIC_ROOT = BASE_DIR / 'static'  # Set STATIC_ROOT to the same directory
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Directory for your static files
+STATIC_ROOT = BASE_DIR / 'staticfiles'  # Directory where static files will be collected in production
 
-# Media settings for file uploads
+# WhiteNoise settings (for production static file handling)
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# Media files settings for file uploads (such as Excel sheets)
 MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+MEDIA_ROOT = BASE_DIR / 'media'  # Directory where media files will be stored
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
