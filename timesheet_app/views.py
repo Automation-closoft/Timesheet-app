@@ -8,6 +8,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
+from django.http import FileResponse
 import openpyxl
 import os
 from datetime import datetime
@@ -114,6 +115,17 @@ def home(request):
         return redirect('success')  # Redirect to success page after submission
 
     return render(request, 'home.html', {'current_date': current_date})
+
+@login_required
+def download_timesheet(request):
+    profile = UserProfile.objects.get(user=request.user)
+    excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
+
+    # Check if the file exists
+    if os.path.exists(excel_filename):
+        return FileResponse(open(excel_filename, 'rb'), as_attachment=True, filename=f"{profile.employee_name}_timesheet.xlsx")
+    else:
+        return render(request, 'error.html', {'message': 'Timesheet file not found.'})
 
 def logout_view(request):
     logout(request)
