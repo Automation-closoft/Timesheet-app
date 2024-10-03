@@ -105,9 +105,9 @@ STATICFILES_DIRS = [BASE_DIR / 'static']  # Use the existing static directory
 STATIC_ROOT = BASE_DIR / 'static'  # Set STATIC_ROOT to the same directory
 
 # Media settings for file uploads
-MEDIA_URL = '/media/'
-MEDIA_ROOT = BASE_DIR / 'media'
+# MEDIA_URL = '/media/'
+# MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default auto field
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
-DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
