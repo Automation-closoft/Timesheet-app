@@ -127,9 +127,6 @@ def admin_download_timesheets(request):
     ws = wb.active
     ws.append(['Employee Name', 'Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])  # Add headings
 
-    # Path to save the timesheets
-    EXCEL_PATH = 'timesheets/'
-
     # Iterate through each user's timesheet file
     for profile in UserProfile.objects.all():
         excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
@@ -141,9 +138,12 @@ def admin_download_timesheets(request):
             for row in ws_user.iter_rows(min_row=2, values_only=True):
                 ws.append([profile.employee_name] + list(row))  # Add employee name to each row
 
+    # Save the workbook before returning the response
+    all_timesheets_filename = 'all_timesheets.xlsx'
+    wb.save(all_timesheets_filename)
+
     # Create a response to download the workbook
-    response = FileResponse(open('all_timesheets.xlsx', 'wb'), as_attachment=True, filename="all_timesheets.xlsx")
-    wb.save('all_timesheets.xlsx')
+    response = FileResponse(open(all_timesheets_filename, 'rb'), as_attachment=True, filename=all_timesheets_filename)
     return response
 
 def logout_view(request):
