@@ -1,34 +1,19 @@
+{% extends 'base.html' %}  <!-- Extend your base template -->
 {% load static %}
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download Timesheets</title>
-    <link rel="stylesheet" href="{% static 'css/styles.css' %}">
-</head>
-<body>
+
+{% block title %}Download Timesheets{% endblock %}  <!-- Set the title for this page -->
+
+{% block content %}
     <div class="wrapper">
-        <nav class="navbar">
-            <a href="/">Home</a>
-            <a href="/logout/">Logout</a>
-        </nav>
-        <div class="content">
-            <h2>Download Timesheets</h2>
-            <ul>
-                {% for file in excel_files %}
-                    <li>
-                        <a href="{{ file.url }}">{{ file.name }}</a>
-                    </li>
-                {% empty %}
-                    <li>No timesheets available for download.</li>
-                {% endfor %}
-            </ul>
-        </div>
-        <footer>
-            <div class="copyright">&copy; 2024 Timesheet App. All rights reserved.</div>
-        </footer>
+        <h2>Download Timesheets</h2>
+        <ul>
+            {% for file in excel_files %}
+                <li>
+                    <a href="{{ file.url }}">{{ file.name }}</a>
+                </li>
+            {% empty %}
+                <li>No timesheets available for download.</li>
+            {% endfor %}
+        </ul>
     </div>
-    <script src="{% static 'js/script.js' %}"></script>
-</body>
-</html>
+{% endblock %}
