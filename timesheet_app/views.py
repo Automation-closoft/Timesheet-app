@@ -42,7 +42,7 @@ def signup(request):
             profile = UserProfile.objects.create(user=user, employee_name=employee_name)
 
             # Create a new Excel sheet for the user
-            excel_filename = f'{EXCEL_PATH}{employee_name}.xlsx'
+            excel_filename = os.path.join(EXCEL_PATH, f'{employee_name}.xlsx')
             wb = openpyxl.Workbook()
             ws = wb.active
             ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])  # Add headings
@@ -84,7 +84,7 @@ def home(request):
         formatted_hours_worked = format_hours_and_minutes(hours_worked)  # Format to "Xh Ym"
 
         profile = UserProfile.objects.get(user=request.user)
-        excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
+        excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
 
         # Load or create the workbook
         if os.path.exists(excel_filename):
@@ -129,7 +129,7 @@ def admin_download_timesheets(request):
 
     # Iterate through each user's timesheet file
     for profile in UserProfile.objects.all():
-        excel_filename = f'{EXCEL_PATH}{profile.employee_name}.xlsx'
+        excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
         if os.path.exists(excel_filename):
             wb_user = openpyxl.load_workbook(excel_filename)
             ws_user = wb_user.active
@@ -139,11 +139,15 @@ def admin_download_timesheets(request):
                 ws.append([profile.employee_name] + list(row))  # Add employee name to each row
 
     # Save the workbook before returning the response
-    all_timesheets_filename = 'all_timesheets.xlsx'
+    all_timesheets_filename = os.path.join(EXCEL_PATH, 'all_timesheets.xlsx')
     wb.save(all_timesheets_filename)
 
     # Create a response to download the workbook
-    response = FileResponse(open(all_timesheets_filename, 'rb'), as_attachment=True, filename=all_timesheets_filename)
+    response = FileResponse(open(all_timesheets_filename, 'rb'), as_attachment=True, filename='all_timesheets.xlsx')
+
+    # Clean up: Optionally remove the temporary file after sending it to the user
+    os.remove(all_timesheets_filename)
+
     return response
 
 def logout_view(request):
