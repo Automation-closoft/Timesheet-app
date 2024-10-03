@@ -13,7 +13,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # Allowed hosts - Add your Render app URL and localhost
 ALLOWED_HOSTS = [
-    'timesheet-app-ewnc.onrender.com',
+    'timesheet-app-ewnc.onrender.com',  # Your Render app URL
     'localhost',
     '127.0.0.1',
 ]
