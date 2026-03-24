@@ -13,9 +13,9 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
 # Allowed hosts
 ALLOWED_HOSTS = [
-    'timesheet-app-ewnc.onrender.com',
     'localhost',
     '127.0.0.1',
+    '.koyeb.app',  # This allows any URL Koyeb gives you
 ]
 
 # Installed apps
@@ -64,17 +64,15 @@ TEMPLATES = [
 # WSGI application
 WSGI_APPLICATION = 'timesheet_project.wsgi.application'
 
-# Database configuration - use PostgreSQL in production
+import dj_database_url
+
+# Database configuration
 DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',  # Change to 'django.db.backends.postgresql' in production
-        'NAME': BASE_DIR / 'db.sqlite3',
-        # Uncomment and configure for PostgreSQL:
-        # 'USER': os.environ.get('DB_USER'),
-        # 'PASSWORD': os.environ.get('DB_PASSWORD'),
-        # 'HOST': os.environ.get('DB_HOST', 'localhost'),
-        # 'PORT': os.environ.get('DB_PORT', '5432'),
-    }
+    'default': dj_database_url.config(
+        # This uses your Neon link from Koyeb environment variables
+        default=f'sqlite:///{BASE_DIR / "db.sqlite3"}',
+        conn_max_age=600
+    )
 }
 
 # Password validators
@@ -101,8 +99,8 @@ USE_TZ = True
 
 # Static files
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']  # Use the existing static directory
-STATIC_ROOT = BASE_DIR / 'static'  # Set STATIC_ROOT to the same directory
+STATICFILES_DIRS = [BASE_DIR / 'static']  # Where you keep your CSS/JS files now
+STATIC_ROOT = BASE_DIR / 'staticfiles'   # Where Koyeb will "gather" them for the web
 
 # Media settings for file uploads
 # MEDIA_URL = '/media/'
