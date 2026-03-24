@@ -13,6 +13,7 @@ from django.core.exceptions import PermissionDenied
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 import openpyxl
+from django.http import FileResponse, Http404
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -176,3 +177,21 @@ def password_change_view(request):
 
 def password_change_done(request):
     return render(request, 'password_change_done.html')
+
+
+@login_required
+def download_single_timesheet(request, filename):
+    if not request.user.is_staff:
+        raise PermissionDenied("You do not have permission to download timesheets.")
+    
+    excel_filename = os.path.join(EXCEL_PATH, filename)
+    
+    if os.path.exists(excel_filename):
+        response = FileResponse(
+            open(excel_filename, 'rb'),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    else:
+        raise Http404("Timesheet not found")
