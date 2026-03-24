@@ -11,11 +11,12 @@ SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', get_random_secret_key())
 # Debugging
 DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 
-# Allowed hosts
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.onrender.com', # This is your new home!
+    'timesheet-app-fb5r.onrender.com',  # Your specific Render URL
+    '.onrender.com',                   # The general Render domain
+    '*',                               # The "Open Door" (Use this if the others fail!)
 ]
 
 # Installed apps
