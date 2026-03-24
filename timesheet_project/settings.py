@@ -15,7 +15,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'False') == 'True'
 ALLOWED_HOSTS = [
     'localhost',
     '127.0.0.1',
-    '.koyeb.app',  # This allows any URL Koyeb gives you
+    '.onrender.com', # This is your new home!
 ]
 
 # Installed apps
