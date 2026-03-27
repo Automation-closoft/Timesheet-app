@@ -1,8 +1,10 @@
 from django.contrib import admin
 from django.urls import path
+from django.shortcuts import redirect
 from timesheet_app import views
 
 urlpatterns = [
+    path('', lambda request: redirect('login'), name='root'),
     path('admin/', admin.site.urls),
     path('signup/', views.signup, name='signup'),
     path('login/', views.login_view, name='login'),
