@@ -156,7 +156,7 @@ def download_single_timesheet(request, filename):
     if not request.user.is_staff:
         raise PermissionDenied("You do not have permission to download timesheets.")
 
-    # Decode URL-encoded characters (e.g., %20 → space)
+    # Decode URL-encoded characters (e.g., %20 -> space)
     filename = unquote(filename)
 
     # Prevent path traversal attacks
