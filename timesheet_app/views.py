@@ -14,7 +14,6 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 import openpyxl
 from django.http import FileResponse, Http404
-from django.urls import reverse
 from urllib.parse import unquote
 
 # Set up logging
@@ -137,6 +136,29 @@ def admin_download_timesheets(request):
     if not request.user.is_staff:
         raise PermissionDenied("You do not have permission to download timesheets.")
 
+    # If ?file=something.xlsx is in the URL, download that file
+    file_to_download = request.GET.get('file')
+    if file_to_download:
+        # Decode URL-encoded characters (e.g., %20 -> space)
+        file_to_download = unquote(file_to_download)
+
+        # Prevent path traversal attacks
+        if '..' in file_to_download or '/' in file_to_download:
+            raise Http404("Invalid filename")
+
+        excel_filepath = os.path.join(EXCEL_PATH, file_to_download)
+
+        if os.path.exists(excel_filepath):
+            response = FileResponse(
+                open(excel_filepath, 'rb'),
+                content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+            )
+            response['Content-Disposition'] = f'attachment; filename="{file_to_download}"'
+            return response
+        else:
+            raise Http404("Timesheet not found")
+
+    # Otherwise, show the list of timesheets
     profiles = UserProfile.objects.all()
     excel_files = []
     for profile in profiles:
@@ -145,35 +167,10 @@ def admin_download_timesheets(request):
             filename = f'{profile.employee_name}.xlsx'
             excel_files.append({
                 'name': f"{profile.employee_name}'s Timesheet",
-                'url': reverse('download_single_timesheet', kwargs={'filename': filename})
+                'url': f'/download-timesheets/?file={filename}'
             })
 
     return render(request, 'download_timesheets.html', {'excel_files': excel_files})
-
-
-@login_required
-def download_single_timesheet(request, filename):
-    if not request.user.is_staff:
-        raise PermissionDenied("You do not have permission to download timesheets.")
-
-    # Decode URL-encoded characters (e.g., %20 -> space)
-    filename = unquote(filename)
-
-    # Prevent path traversal attacks
-    if '..' in filename or '/' in filename:
-        raise Http404("Invalid filename")
-
-    excel_filepath = os.path.join(EXCEL_PATH, filename)
-
-    if os.path.exists(excel_filepath):
-        response = FileResponse(
-            open(excel_filepath, 'rb'),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-    else:
-        raise Http404("Timesheet not found")
 
 
 def logout_view(request):
