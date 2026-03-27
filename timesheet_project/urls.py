@@ -12,5 +12,4 @@ urlpatterns = [
     path('password_change/', views.password_change_view, name='password_change'),
     path('password_change_done/', views.password_change_done, name='password_change_done'),
     path('download-timesheets/', views.admin_download_timesheets, name='download_timesheets'),
-    path('timesheets/<str:filename>', views.download_single_timesheet, name='download_single_timesheet'),
 ]
