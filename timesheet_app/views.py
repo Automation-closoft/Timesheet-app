@@ -14,6 +14,8 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib import messages
 import openpyxl
 from django.http import FileResponse, Http404
+from django.urls import reverse
+from urllib.parse import unquote
 
 # Set up logging
 logger = logging.getLogger(__name__)
@@ -25,10 +27,12 @@ EXCEL_PATH = 'timesheets/'
 if not os.path.exists(EXCEL_PATH):
     os.makedirs(EXCEL_PATH)
 
+
 def format_hours_and_minutes(total_hours):
     hours = int(total_hours)
     minutes = int((total_hours - hours) * 60)
     return f"{hours}h {minutes}m"
+
 
 @login_required
 def signup(request):
@@ -49,13 +53,14 @@ def signup(request):
             excel_filename = os.path.join(EXCEL_PATH, f'{employee_name}.xlsx')
             wb = openpyxl.Workbook()
             ws = wb.active
-            ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])  # Add headings
+            ws.append(['Date', 'Project Working On', 'Log In Time', 'Log Out Time', 'Hours Worked'])
             wb.save(excel_filename)
 
             return redirect('login')
     else:
         form = UserRegistrationForm()
     return render(request, 'signup.html', {'form': form})
+
 
 def login_view(request):
     if request.method == 'POST':
@@ -69,9 +74,10 @@ def login_view(request):
             return render(request, 'login.html', {'error': 'Invalid credentials'})
     return render(request, 'login.html')
 
+
 @login_required
 def home(request):
-    current_date = timezone.now().date()  # Get the current date
+    current_date = timezone.now().date()
 
     if request.method == 'POST':
         project = request.POST.get('project')
@@ -90,8 +96,8 @@ def home(request):
             messages.error(request, "Please enter time in HH:MM format.")
             return render(request, 'home.html', {'current_date': current_date})
 
-        hours_worked = (logout_time_obj - login_time_obj).seconds / 3600  # Convert seconds to hours
-        formatted_hours_worked = format_hours_and_minutes(hours_worked)  # Format to "Xh Ym"
+        hours_worked = (logout_time_obj - login_time_obj).seconds / 3600
+        formatted_hours_worked = format_hours_and_minutes(hours_worked)
 
         try:
             profile = UserProfile.objects.get(user=request.user)
@@ -109,23 +115,22 @@ def home(request):
             wb = openpyxl.load_workbook(excel_filename)
             ws = wb.active
 
-        # Check if the date already exists in the Excel sheet
         for row in ws.iter_rows(min_row=2, max_row=ws.max_row):
             if row[0].value == date:
                 row[1].value = project
                 row[2].value = login_time
                 row[3].value = logout_time
-                row[4].value = formatted_hours_worked  # Update hours worked if the entry exists
+                row[4].value = formatted_hours_worked
                 break
         else:
-            # Append a new entry with formatted hours worked
             ws.append([date, project, login_time, logout_time, formatted_hours_worked])
 
         wb.save(excel_filename)
 
-        return redirect('success')  # Redirect to success page after submission
+        return redirect('success')
 
     return render(request, 'home.html', {'current_date': current_date})
+
 
 @login_required
 def admin_download_timesheets(request):
@@ -137,19 +142,48 @@ def admin_download_timesheets(request):
     for profile in profiles:
         excel_filename = os.path.join(EXCEL_PATH, f'{profile.employee_name}.xlsx')
         if os.path.exists(excel_filename):
+            filename = f'{profile.employee_name}.xlsx'
             excel_files.append({
                 'name': f"{profile.employee_name}'s Timesheet",
-                'url': f'/timesheets/{profile.employee_name}.xlsx'  # Adjust URL according to your settings
+                'url': reverse('download_single_timesheet', kwargs={'filename': filename})
             })
 
     return render(request, 'download_timesheets.html', {'excel_files': excel_files})
+
+
+@login_required
+def download_single_timesheet(request, filename):
+    if not request.user.is_staff:
+        raise PermissionDenied("You do not have permission to download timesheets.")
+
+    # Decode URL-encoded characters (e.g., %20 → space)
+    filename = unquote(filename)
+
+    # Prevent path traversal attacks
+    if '..' in filename or '/' in filename:
+        raise Http404("Invalid filename")
+
+    excel_filepath = os.path.join(EXCEL_PATH, filename)
+
+    if os.path.exists(excel_filepath):
+        response = FileResponse(
+            open(excel_filepath, 'rb'),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        return response
+    else:
+        raise Http404("Timesheet not found")
+
 
 def logout_view(request):
     logout(request)
     return redirect('login')
 
+
 def success_view(request):
     return render(request, 'success.html')
+
 
 @login_required
 def password_change_view(request):
@@ -158,40 +192,21 @@ def password_change_view(request):
         if form.is_valid():
             user = form.save()
 
-            # Clear any existing messages to avoid multiple success messages
             storage = messages.get_messages(request)
             for _ in storage:
-                pass  # This clears existing messages
+                pass
 
             messages.success(request, 'Your password has been updated!')
 
-            # Log out the user after successful password change and redirect to password change done
             logout(request)
             return redirect('password_change_done')
         else:
-            logger.error(f"Password change form errors: {form.errors}")  # Log errors for debugging
+            logger.error(f"Password change form errors: {form.errors}")
     else:
         form = PasswordChangeForm(request.user)
 
     return render(request, 'password_change_form.html', {'form': form})
 
+
 def password_change_done(request):
     return render(request, 'password_change_done.html')
-
-
-@login_required
-def download_single_timesheet(request, filename):
-    if not request.user.is_staff:
-        raise PermissionDenied("You do not have permission to download timesheets.")
-    
-    excel_filename = os.path.join(EXCEL_PATH, filename)
-    
-    if os.path.exists(excel_filename):
-        response = FileResponse(
-            open(excel_filename, 'rb'),
-            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
-        return response
-    else:
-        raise Http404("Timesheet not found")
